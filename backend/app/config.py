@@ -22,7 +22,7 @@ class Settings(BaseSettings):
 
     # Execution-based scoring (Docker sandbox)
     enable_execution: bool = True
-    execution_weight: int = 40
+    execution_weight: int = 30
     execution_timeout: int = 240
 
     # Azure deployment bonus — graded points (0–100 scale): detected = min, live = max.
