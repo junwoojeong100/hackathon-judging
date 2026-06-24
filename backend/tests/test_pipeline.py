@@ -50,10 +50,10 @@ def test_run_pipeline_scores_submission(tmp_path, monkeypatch):
     sub = db.get(Submission, sid)
     assert sub.status == "scored"
     judgment = sub.judgments[-1]
-    # criteria all 8/10, AI weights sum 20, no execution (None), no bonuses
-    # absolute base = 0.8 * 20 = 16.0
-    assert judgment.overall_score == 16.0
-    assert judgment.base_score == 16.0
+    # criteria all 8/10, AI weights sum 40, no execution (None), no bonuses
+    # absolute base = 0.8 * 40 = 32.0
+    assert judgment.overall_score == 32.0
+    assert judgment.base_score == 32.0
     assert judgment.azure_bonus == 0.0
     assert judgment.summary == "전반적으로 우수합니다."
     assert judgment.model == "test-model"

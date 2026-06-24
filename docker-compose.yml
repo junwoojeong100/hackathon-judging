@@ -20,10 +20,10 @@ services:
       CORS_ORIGINS: http://localhost:5173,http://localhost:3000
       # Optional admin token (blank = open). Bonus ranges (0-100 scale).
       ADMIN_TOKEN: ${ADMIN_TOKEN:-}
-      AZURE_BONUS_MIN: ${AZURE_BONUS_MIN:-15}
-      AZURE_BONUS_MAX: ${AZURE_BONUS_MAX:-25}
+      AZURE_BONUS_MIN: ${AZURE_BONUS_MIN:-10}
+      AZURE_BONUS_MAX: ${AZURE_BONUS_MAX:-20}
       MS_STACK_BONUS_MIN: ${MS_STACK_BONUS_MIN:-10}
-      MS_STACK_BONUS_MAX: ${MS_STACK_BONUS_MAX:-25}
+      MS_STACK_BONUS_MAX: ${MS_STACK_BONUS_MAX:-20}
       # Execution-based scoring needs Docker. Inside this container it is OFF by
       # default; run the backend on the host (or mount the Docker socket) to enable.
       ENABLE_EXECUTION: ${ENABLE_EXECUTION:-false}
