@@ -124,6 +124,7 @@ npm run dev
 | `AZURE_OPENAI_API_VERSION` | API 버전 (예: 2024-10-21) |
 | `DATABASE_URL` | SQLite 경로 |
 | `CORS_ORIGINS` | 허용 오리진(쉼표 구분) |
+| `DATA_DIR` | 데이터 디렉터리(업로드·작업공간, 기본 `./data`) |
 | `MAX_FILES` / `MAX_FILE_CHARS` / `MAX_TOTAL_CHARS` | 코드 수집 상한(토큰 가드레일) |
 | `ENABLE_EXECUTION` | 실행 기반 채점 on/off (기본 true) |
 | `EXECUTION_WEIGHT` | "실행 검증" 항목 점수 상한 (기본 20) |
