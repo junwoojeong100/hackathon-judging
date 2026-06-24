@@ -18,10 +18,6 @@ class CriterionOut(CriterionBase):
     id: int
 
 
-class RubricUpdate(BaseModel):
-    criteria: list[CriterionBase]
-
-
 # ---------- Judging ----------
 class CriterionScoreOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)

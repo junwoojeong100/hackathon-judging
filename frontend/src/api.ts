@@ -77,10 +77,4 @@ export const api = {
   leaderboard: () => req<LeaderboardEntry[]>('/api/leaderboard'),
 
   getRubric: () => req<Criterion[]>('/api/rubric'),
-  updateRubric: (criteria: Criterion[]) =>
-    req<Criterion[]>('/api/rubric', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ criteria }),
-    }),
 }
