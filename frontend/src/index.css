@@ -570,3 +570,7 @@ a {
   border-top: 2px solid var(--border);
   padding-top: 12px;
 }
+
+.rubric-table .auto-row td {
+  background: var(--bg);
+}
