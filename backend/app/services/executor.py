@@ -50,11 +50,34 @@ _GO_SCRIPT = (
     "echo '::test'; go test ./... 2>&1 | tail -n 120 || exit 33; "
     "echo '::done'"
 )
+_DOTNET_SCRIPT = (
+    "set -e; "
+    "echo '::install'; dotnet restore 2>&1 | tail -n 40 || exit 31; "
+    "echo '::build'; dotnet build -c Release 2>&1 | tail -n 40 || exit 32; "
+    "echo '::test'; dotnet test -c Release 2>&1 | tail -n 160 || exit 33; "
+    "echo '::done'"
+)
+_JAVA_MAVEN_SCRIPT = (
+    "set -e; "
+    "echo '::install'; mvn -B -q -DskipTests dependency:go-offline 2>&1 | tail -n 40 || exit 31; "
+    "echo '::build'; mvn -B -q -DskipTests package 2>&1 | tail -n 40 || exit 32; "
+    "echo '::test'; mvn -B test 2>&1 | tail -n 200 || exit 33; "
+    "echo '::done'"
+)
+_JAVA_GRADLE_SCRIPT = (
+    "set -e; "
+    "echo '::build'; gradle --no-daemon -q build -x test 2>&1 | tail -n 40 || exit 32; "
+    "echo '::test'; gradle --no-daemon test 2>&1 | tail -n 200 || exit 33; "
+    "echo '::done'"
+)
 
 _IMAGES = {
     "node": ("node:20-slim", _NODE_SCRIPT),
     "python": ("python:3.12-slim", _PY_SCRIPT),
     "go": ("golang:1.22-bookworm", _GO_SCRIPT),
+    "dotnet": ("mcr.microsoft.com/dotnet/sdk:8.0", _DOTNET_SCRIPT),
+    "java-maven": ("maven:3.9-eclipse-temurin-21", _JAVA_MAVEN_SCRIPT),
+    "java-gradle": ("gradle:8-jdk21", _JAVA_GRADLE_SCRIPT),
 }
 
 
@@ -70,6 +93,20 @@ def docker_available() -> bool:
         return False
 
 
+def _find_marker(root_dir: str, names: tuple = (), suffixes: tuple = ()) -> bool:
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        dirnames[:] = [
+            d
+            for d in dirnames
+            if d not in ("node_modules", ".git", "bin", "obj", "target", ".gradle", "packages")
+        ]
+        for f in filenames:
+            low = f.lower()
+            if low in names or any(low.endswith(s) for s in suffixes):
+                return True
+    return False
+
+
 def _detect_stack(root_dir: str) -> str:
     def has(name: str) -> bool:
         return os.path.exists(os.path.join(root_dir, name))
@@ -80,6 +117,12 @@ def _detect_stack(root_dir: str) -> str:
         return "python"
     if has("go.mod"):
         return "go"
+    if _find_marker(root_dir, suffixes=(".sln", ".csproj")):
+        return "dotnet"
+    if _find_marker(root_dir, names=("pom.xml",)):
+        return "java-maven"
+    if _find_marker(root_dir, names=("build.gradle", "build.gradle.kts")):
+        return "java-gradle"
     return ""
 
 
@@ -95,6 +138,27 @@ def _parse_tests(stack: str, log: str) -> tuple[int, int]:
         m = re.search(r"(\d+) failed", log)
         if m:
             failed = int(m.group(1))
+    elif stack == "dotnet":
+        # "Passed!  - Failed:     0, Passed:     5, Skipped:     0, ..."
+        m = re.search(r"Passed:\s*(\d+)", log)
+        if m:
+            passed = int(m.group(1))
+        m = re.search(r"Failed:\s*(\d+)", log)
+        if m:
+            failed = int(m.group(1))
+    elif stack.startswith("java"):
+        # Maven Surefire: "Tests run: 10, Failures: 0, Errors: 0, Skipped: 1"
+        best = None
+        for m in re.finditer(
+            r"Tests run:\s*(\d+),\s*Failures:\s*(\d+),\s*Errors:\s*(\d+)", log
+        ):
+            run, fa, er = int(m.group(1)), int(m.group(2)), int(m.group(3))
+            if best is None or run > best[0]:
+                best = (run, fa, er)
+        if best:
+            run, fa, er = best
+            failed = fa + er
+            passed = max(0, run - fa - er)
     else:
         # ava / jest / mocha / tap style
         for pat in [r"(\d+) passed", r"(\d+) passing", r"# pass (\d+)"]:

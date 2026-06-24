@@ -21,6 +21,33 @@ def test_detect_stack_none(tmp_path):
     assert _detect_stack(str(tmp_path)) == ""
 
 
+def test_detect_stack_dotnet(tmp_path):
+    proj = tmp_path / "src" / "App"
+    proj.mkdir(parents=True)
+    (proj / "App.csproj").write_text("<Project Sdk='Microsoft.NET.Sdk' />")
+    assert _detect_stack(str(tmp_path)) == "dotnet"
+
+
+def test_detect_stack_java_maven(tmp_path):
+    (tmp_path / "pom.xml").write_text("<project/>")
+    assert _detect_stack(str(tmp_path)) == "java-maven"
+
+
+def test_detect_stack_java_gradle(tmp_path):
+    (tmp_path / "build.gradle").write_text("plugins {}")
+    assert _detect_stack(str(tmp_path)) == "java-gradle"
+
+
+def test_parse_tests_dotnet():
+    log = "Passed!  - Failed:     0, Passed:     5, Skipped:     0, Total:     5"
+    assert _parse_tests("dotnet", log) == (5, 0)
+
+
+def test_parse_tests_java_maven():
+    log = "Results:\n\nTests run: 8, Failures: 1, Errors: 1, Skipped: 0"
+    assert _parse_tests("java-maven", log) == (6, 2)  # 8 - 1 - 1 passed, 1+1 failed
+
+
 def test_score_build_failed():
     assert _score(ExecutionReport(build_ran=True, build_ok=False)) == 2.0
 
