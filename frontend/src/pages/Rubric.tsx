@@ -84,12 +84,12 @@ export default function Rubric() {
 
       {health && (
         <div className="card">
-          <h3>전체 채점 구성 (0–100점)</h3>
+          <h3>전체 채점 구성</h3>
           <table className="table">
             <tbody>
               <tr>
                 <td>AI 루브릭(아래 편집 가능)</td>
-                <td className="strong" style={{ width: 120, textAlign: 'right' }}>{total}점</td>
+                <td className="strong" style={{ width: 130, textAlign: 'right' }}>{total}점</td>
               </tr>
               <tr>
                 <td>
@@ -101,9 +101,9 @@ export default function Rubric() {
                 <td className="strong" style={{ textAlign: 'right' }}>{execWeight}점</td>
               </tr>
               <tr>
-                <td className="strong">기본 점수 합계</td>
+                <td className="strong">기본 점수 만점</td>
                 <td className="strong" style={{ textAlign: 'right' }}>
-                  {baseTotal}점 {baseTotal !== 100 && <span className="stage stage-interim">100 권장</span>}
+                  {baseTotal}점 {baseTotal > 100 && <span className="stage stage-interim">100 초과</span>}
                 </td>
               </tr>
               <tr>
@@ -116,7 +116,10 @@ export default function Rubric() {
               </tr>
             </tbody>
           </table>
-          <p className="muted small">종합 점수 = min(100, 기본 점수 + 가산점들). 실행 검증·가산점은 코드로 결정됩니다.</p>
+          <p className="muted small">
+            각 항목은 0–10으로 채점되어 <b>(점수/10 × 가중치)</b>의 합이 기본 점수입니다(만점 {baseTotal}점).
+            종합 = min(100, 기본 점수 + 가산점들). 실행 검증·가산점은 코드로 결정됩니다.
+          </p>
         </div>
       )}
 

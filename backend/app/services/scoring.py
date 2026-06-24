@@ -20,3 +20,12 @@ def compute_overall(scores: list[dict], weights: dict[str, int]) -> float:
     if total_weight == 0:
         return 0.0
     return round(acc / total_weight, 2)
+
+
+def compute_absolute(scores: list[dict], weights: dict[str, int]) -> float:
+    """Absolute points: each criterion contributes (score/10) * weight, where the
+    weight is its point cap. Returns the summed points (0 .. sum of weights)."""
+    return round(
+        sum((float(s["score"]) / 10.0) * weights.get(s["criterion_key"], 0) for s in scores),
+        1,
+    )

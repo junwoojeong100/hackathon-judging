@@ -14,7 +14,7 @@ from .executor import run_execution
 from .ingest import cleanup, ingest_github, ingest_zip
 from .judge import generate_scores
 from .ms_stack_detect import detect_ms_stack, ms_stack_bonus_points
-from .scoring import clamp_score, compute_overall
+from .scoring import clamp_score, compute_absolute
 
 
 def uploads_dir() -> str:
@@ -161,8 +161,9 @@ def run_pipeline(submission_id: int) -> None:
             )
             normalized.append({"criterion_key": "execution", "score": exec_report.score})
 
-        # Weighted base on a 0-100 scale (criteria are 0-10; weights sum to ~100).
-        base100 = round(compute_overall(normalized, weights) * 10.0, 1)
+        # Absolute base points: each criterion contributes (score/10) * weight.
+        # Max base = sum of weights (AI rubric 30 + 실행 검증 50 = 80 by default).
+        base100 = compute_absolute(normalized, weights)
 
         # Bonuses (added on top, total capped at 100):
         #  - Azure deployment: detected -> min, verified live -> max
