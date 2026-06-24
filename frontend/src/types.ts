@@ -22,6 +22,9 @@ export interface Judgment {
   azure_detected: boolean
   azure_bonus: number
   azure_signals: string
+  ms_stack_detected: boolean
+  ms_stack_bonus: number
+  ms_stack_signals: string
   summary: string
   model: string
   created_at: string
@@ -52,4 +55,5 @@ export interface LeaderboardEntry {
   stage: string
   attempts: number
   azure_detected: boolean
+  ms_stack_detected: boolean
 }

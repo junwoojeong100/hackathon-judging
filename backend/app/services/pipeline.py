@@ -13,6 +13,7 @@ from .collector import build_digest, render_digest
 from .executor import run_execution
 from .ingest import cleanup, ingest_github, ingest_zip
 from .judge import generate_scores
+from .ms_stack_detect import detect_ms_stack, ms_stack_bonus_points
 from .scoring import clamp_score, compute_overall
 
 
@@ -86,15 +87,16 @@ def run_pipeline(submission_id: int) -> None:
             except Exception:  # noqa: BLE001 - execution is best-effort
                 exec_report = None
 
-        # --- Azure deployment evidence ---
+        # --- Deployment / tech-stack bonuses (deterministic, additive) ---
         azure = detect_azure(ingest_res.root_dir, digest_text, submission.deployment_url or "")
+        ms_stack = detect_ms_stack(digest_text)
 
-        # Build evidence text shown to the AI judge as grounding.
+        # Evidence shown to the AI judge: only the execution result, which grounds the
+        # functionality/quality rubric. Bonuses (Azure/MS-stack) are scored separately
+        # and deterministically, so they are NOT fed to the AI to avoid double-counting.
         evidence_lines = []
         if exec_report and exec_report.summary:
             evidence_lines.append(f"실행 검증: {exec_report.summary}")
-        if azure.detected:
-            evidence_lines.append("Azure 배포 신호: " + ", ".join(azure.signals))
         evidence = "\n".join(evidence_lines)
 
         try:
@@ -162,13 +164,25 @@ def run_pipeline(submission_id: int) -> None:
         # Weighted base on a 0-100 scale (criteria are 0-10; weights sum to ~100).
         base100 = round(compute_overall(normalized, weights) * 10.0, 1)
 
-        # Azure deployment bonus (graded 20-30), added on top and capped at 100.
-        bonus = azure_bonus_points(azure, settings.azure_bonus_min, settings.azure_bonus_max)
+        # Bonuses (added on top, total capped at 100):
+        #  - Azure deployment: detected -> min, verified live -> max
+        #  - Microsoft AI stack: graded by number of components used
+        azure_pts = azure_bonus_points(azure, settings.azure_bonus_min, settings.azure_bonus_max)
+        ms_pts = ms_stack_bonus_points(
+            ms_stack,
+            settings.ms_stack_bonus_min,
+            settings.ms_stack_bonus_max,
+            settings.ms_stack_bonus_per,
+        )
+
         judgment.base_score = base100
         judgment.azure_detected = azure.detected
-        judgment.azure_bonus = bonus
+        judgment.azure_bonus = azure_pts
         judgment.azure_signals = ", ".join(azure.signals)
-        judgment.overall_score = round(min(100.0, base100 + bonus), 1)
+        judgment.ms_stack_detected = ms_stack.detected
+        judgment.ms_stack_bonus = ms_pts
+        judgment.ms_stack_signals = ", ".join(ms_stack.signals)
+        judgment.overall_score = round(min(100.0, base100 + azure_pts + ms_pts), 1)
 
         submission.status = "scored"
         db.commit()

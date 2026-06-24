@@ -68,6 +68,7 @@ export default function Leaderboard() {
                   <td>
                     {e.project_name}
                     {e.azure_detected && <span title="Azure 배포 감지"> ☁️</span>}
+                    {e.ms_stack_detected && <span title="MS AI 스택 사용"> 🧩</span>}
                     {e.attempts > 1 && <span className="muted small"> · {e.attempts}회 제출</span>}
                   </td>
                   <td>

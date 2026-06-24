@@ -40,6 +40,9 @@ class JudgmentOut(BaseModel):
     azure_detected: bool = False
     azure_bonus: float = 0.0
     azure_signals: str = ""
+    ms_stack_detected: bool = False
+    ms_stack_bonus: float = 0.0
+    ms_stack_signals: str = ""
     summary: str
     model: str
     created_at: datetime
@@ -83,3 +86,4 @@ class LeaderboardEntry(BaseModel):
     stage: str
     attempts: int
     azure_detected: bool = False
+    ms_stack_detected: bool = False

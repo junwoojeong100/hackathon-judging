@@ -56,7 +56,7 @@ def test_run_pipeline_scores_submission(tmp_path, monkeypatch):
     assert judgment.azure_bonus == 0.0
     assert judgment.summary == "전반적으로 우수합니다."
     assert judgment.model == "test-model"
-    assert len(judgment.scores) == 4  # 4 objective rubric criteria (execution excluded)
+    assert len(judgment.scores) == 3  # 3 objective rubric criteria (execution excluded)
     db.close()
 
 

@@ -5,18 +5,13 @@ def test_azure_bonus_none_when_not_detected():
     assert azure_bonus_points(AzureEvidence(detected=False), 20, 30) == 0.0
 
 
-def test_azure_bonus_detected_only_is_min():
-    ev = AzureEvidence(detected=True, has_iac=False, url_live=False)
+def test_azure_bonus_detected_not_live_is_min():
+    ev = AzureEvidence(detected=True, has_iac=True, url_live=False)
     assert azure_bonus_points(ev, 20, 30) == 20.0
 
 
-def test_azure_bonus_iac_only():
-    ev = AzureEvidence(detected=True, has_iac=True, url_live=False)
-    assert azure_bonus_points(ev, 20, 30) == 25.0
-
-
-def test_azure_bonus_iac_and_live_is_max():
-    ev = AzureEvidence(detected=True, has_iac=True, url_live=True)
+def test_azure_bonus_live_is_max():
+    ev = AzureEvidence(detected=True, has_iac=False, url_live=True)
     assert azure_bonus_points(ev, 20, 30) == 30.0
 
 

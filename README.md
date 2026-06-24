@@ -9,21 +9,19 @@
 - **실행**: `docker-compose` (인증 없음, 로컬/데모용)
 
 ## 채점 루브릭 — 저장소 산출물 기반 **절대 평가** (0–100점)
-점수는 다른 팀과 비교하지 않고 각 기준의 고정된 절대 기준(앵커)으로 매기며, 판단 근거는 오직
-저장소의 실제 산출물(소스·설정·문서)입니다. (UI에서 가중치 조정 가능)
+GitHub Copilot로 작성한 **실제 동작하는 앱**을 평가하는 데 맞춰, "실행 여부"와 "동작하는 기능의 수"를
+가장 크게 봅니다. (IaC/CI 자동화는 채점 기준이 아닙니다. UI에서 가중치 조정 가능)
 
 | 기준 | 가중치 | 근거 | 채점 방식 |
 | --- | --- | --- | --- |
-| 소스코드 완전성 (completeness) | 30 | 소스파일 | AI(절대 앵커) |
-| 실행 검증 (execution) | 25 | Docker 실제 실행 | **결정적(빌드·테스트)** |
+| 기능 구현·완성도 (functionality) | 35 | 소스 + 실행/테스트 | AI(절대 앵커, **동작 기능 수** 강조) |
+| 실행 검증 (execution) | 30 | Docker 실제 실행 | **결정적(빌드·테스트)** |
 | 코드 품질 (code_quality) | 20 | 소스파일 | AI(절대 앵커) |
 | README·문서화 (documentation) | 15 | README/문서 | AI(절대 앵커) |
-| 설정·배포 준비 (config_readiness) | 10 | 설정파일 | AI(절대 앵커) |
 
-- 각 항목은 0–10으로 채점되고, **고정 분모(전체 가중치)** 로 정규화해 **0–100 기본 점수**가 됩니다.
-  (실행 검증은 Docker로 실제 실행 가능할 때 포함되며, 불가 시 나머지 항목으로 정규화)
-- 주관적 '아이디어 참신함'은 저장소만으로 객관적 판단이 어렵다고 보아 **루브릭에서 제외**했습니다.
-- 여기에 **Azure 배포 가산점(20–30점)** 이 더해집니다(아래 참조). 종합 = `min(100, 기본 + 가산)`.
+- 각 항목 0–10 채점 후 **고정 분모(전체 가중치)** 로 정규화 → **0–100 기본 점수**.
+- 여기에 **Azure 배포 가산점**과 **Microsoft AI 스택 가산점**이 더해집니다. 종합 = `min(100, 기본 + 가산들)`.
+- 주관적 '아이디어 참신함'은 저장소만으로 객관 판단이 어려워 루브릭에서 제외했습니다.
 
 ## 제출 단계(중간/최종)와 다회 제출
 - 한 팀은 **중간 점검(interim)** 과 **최종 제출(final)** 을 **횟수 제한 없이** 여러 번 제출할 수 있습니다.
@@ -43,13 +41,17 @@
   > docker-compose의 백엔드 컨테이너에서 실행 채점을 쓰려면 Docker 소켓 접근이 필요합니다(보안 주의).
   > 가장 간단한 사용은 백엔드를 **호스트에서 직접 실행**하는 것입니다.
 
-## Azure 배포 가산점 (20–30점, 등급제)
-- 제출물에 **Azure 배포 증거**가 있으면 종합 점수에 **가산점(기본 20 ~ 최대 30점)** 을 더합니다(상한 100).
-- 등급: 감지되면 **20점**, IaC/CI 배포 구성(azure.yaml/bicep/`infra`/GitHub Actions Azure 배포)이 있으면 **+5**,
-  제출한 **Azure 배포 URL이 실제 응답(live)** 하면 **+5** → 최대 **30점**. (`AZURE_BONUS_MIN`/`AZURE_BONUS_MAX`)
-- 감지 신호: `azure.yaml`(azd), `*.bicep`/`infra/`, GitHub Actions의 Azure 배포/로그인,
+## Azure 배포 가산점 (20–30점)
+- **Azure 배포 증거**가 있으면 **20점**, 제출한 **Azure 배포 URL이 실제 응답(live)** 하면 **30점**을 더합니다(상한 100).
+- 감지 신호: `azure.yaml`(azd), `*.bicep`/`infra/`, GitHub Actions Azure 배포/로그인,
   `azurewebsites.net`·`azurecontainerapps.io` 등 호스트명, ACR 등.
-- 참고: 이는 "배포 설정의 존재"를 평가하며, **실제 라이브 배포**는 제출한 배포 URL의 응답으로만 확인됩니다.
+
+## Microsoft AI 스택 가산점 (10–30점)
+- 다음 기술을 사용하면 **사용한 구성요소 수에 따라** 가산점을 줍니다(1개 10점, 2개 20점, 3개 이상 30점):
+  **Microsoft Foundry · Microsoft Agent Framework · Azure AI Search · Foundry IQ · Foundry Agent Service(Hosted Agent)**
+- 감지 방식: 의존성·임포트·엔드포인트(예: `azure-ai-projects`, `azure-ai-agents`, `azure-search-documents`,
+  `search.windows.net`, `PromptAgentDefinition` 등)를 저장소 산출물에서 탐지(오탐 방지를 위해 구체 신호만).
+- (가산점은 결정적으로 계산되며, AI 루브릭과 별개로 더해집니다 — 중복 가산 없음)
 
 ## 접근 제어 (선택적 관리자 토큰)
 - 기본은 **개방**(데모용 — 누구나 제출). `ADMIN_TOKEN`을 설정하면 **제출·업로드·재심사·삭제·루브릭 변경**에
@@ -104,9 +106,10 @@ npm run dev
 | `CORS_ORIGINS` | 허용 오리진(쉼표 구분) |
 | `MAX_FILES` / `MAX_FILE_CHARS` / `MAX_TOTAL_CHARS` | 코드 수집 상한(토큰 가드레일) |
 | `ENABLE_EXECUTION` | 실행 기반 채점 on/off (기본 true) |
-| `EXECUTION_WEIGHT` | "실행 검증" 항목 가중치 (기본 25) |
+| `EXECUTION_WEIGHT` | "실행 검증" 항목 가중치 (기본 30) |
 | `EXECUTION_TIMEOUT` | 샌드박스 실행 제한 시간(초, 기본 240) |
-| `AZURE_BONUS_MIN` / `AZURE_BONUS_MAX` | Azure 배포 가산점 범위 (기본 20~30) |
+| `AZURE_BONUS_MIN` / `AZURE_BONUS_MAX` | Azure 배포 가산점 (감지 20 / 라이브 30) |
+| `MS_STACK_BONUS_MIN` / `MAX` / `PER` | MS AI 스택 가산점 (구성요소당 10, 10~30) |
 | `ADMIN_TOKEN` | 관리자 토큰 (비우면 개방, 설정 시 변경 작업 보호) |
 
 > Azure OpenAI 설정(엔드포인트/배포 + 인증)이 없으면 심사는 실패(`failed`) 상태가 되며, 제출/리더보드 UI는 정상 동작합니다.

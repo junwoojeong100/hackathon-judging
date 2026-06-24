@@ -125,6 +125,16 @@ a {
   background: var(--primary-soft);
 }
 
+.ms-card {
+  border-color: var(--purple);
+  background: var(--purple-soft);
+}
+
+.stage-ms {
+  background: var(--purple-soft);
+  color: var(--purple);
+}
+
 .container {
   max-width: 1040px;
   margin: 0 auto;

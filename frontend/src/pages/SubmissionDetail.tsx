@@ -162,6 +162,15 @@ export default function SubmissionDetail() {
             </div>
           )}
 
+          {(j.ms_stack_detected || j.ms_stack_bonus > 0) && (
+            <div className="card ms-card">
+              <div>
+                <span className="stage stage-ms">🧩 MS AI 스택 가산점 +{j.ms_stack_bonus.toFixed(1)}</span>
+              </div>
+              {j.ms_stack_signals && <p className="muted small">사용 기술: {j.ms_stack_signals}</p>}
+            </div>
+          )}
+
           {j.summary && (
             <div className="card">
               <h3>총평</h3>

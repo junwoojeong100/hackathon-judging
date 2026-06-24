@@ -86,9 +86,11 @@ def _is_azure_host(url: str) -> bool:
 
 
 def _check_live(url: str) -> bool:
+    """A genuinely deployed app answers in the 2xx/3xx range. Azure's frontend
+    returns 404 for non-existent *.azurewebsites.net hosts, so 4xx/5xx are NOT live."""
     try:
         r = httpx.get(url, timeout=8.0, follow_redirects=True)
-        return r.status_code < 500
+        return r.status_code < 400
     except Exception:
         return False
 
@@ -125,17 +127,8 @@ def detect_azure(root_dir: str, digest_text: str, deployment_url: str = "") -> A
 
 
 def azure_bonus_points(evidence: AzureEvidence, min_pts: float, max_pts: float) -> float:
-    """Graded bonus in [min_pts, max_pts] when Azure deployment evidence exists, else 0.
-
-    base = min_pts (any detection); + half-span for real IaC/CI config;
-    + half-span for a verified live Azure URL. Capped at max_pts.
-    """
+    """Graded bonus: min when Azure deployment evidence exists, max when the
+    submitted Azure URL actually responds (verified live deployment). 0 if none."""
     if not evidence.detected:
         return 0.0
-    span = max(0.0, max_pts - min_pts)
-    pts = min_pts
-    if evidence.has_iac:
-        pts += span / 2
-    if evidence.url_live:
-        pts += span / 2
-    return round(min(max_pts, pts), 1)
+    return round(max_pts if evidence.url_live else min_pts, 1)
