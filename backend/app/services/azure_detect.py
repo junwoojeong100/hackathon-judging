@@ -82,14 +82,17 @@ def _is_azure_host(url: str) -> bool:
         host = (urlparse(url).hostname or "").lower()
     except Exception:
         return False
-    return host.endswith(AZURE_HOST_SUFFIXES)
+    # Require a real dot boundary so "myazurewebsites.net" doesn't match
+    # "azurewebsites.net" (would otherwise allow spoofed bonus / SSRF).
+    return any(host == s or host.endswith("." + s) for s in AZURE_HOST_SUFFIXES)
 
 
 def _check_live(url: str) -> bool:
     """A genuinely deployed app answers in the 2xx/3xx range. Azure's frontend
-    returns 404 for non-existent *.azurewebsites.net hosts, so 4xx/5xx are NOT live."""
+    returns 404 for non-existent *.azurewebsites.net hosts, so 4xx/5xx are NOT live.
+    Redirects are NOT followed — a passing host must not be usable as an SSRF probe."""
     try:
-        r = httpx.get(url, timeout=8.0, follow_redirects=True)
+        r = httpx.get(url, timeout=8.0, follow_redirects=False)
         return r.status_code < 400
     except Exception:
         return False

@@ -6,6 +6,10 @@ import tempfile
 import zipfile
 from dataclasses import dataclass
 
+# Decompression-bomb guards for ZIP extraction (50MB compressed can expand huge).
+MAX_ZIP_UNCOMPRESSED = 500 * 1024 * 1024  # 500 MB total uncompressed
+MAX_ZIP_ENTRIES = 20000
+
 
 @dataclass
 class IngestResult:
@@ -17,13 +21,23 @@ def ingest_github(url: str, workdir: str) -> IngestResult:
     """Shallow-clone a public GitHub repository into a temp directory."""
     os.makedirs(workdir, exist_ok=True)
     dest = tempfile.mkdtemp(prefix="repo_", dir=workdir)
+    # Never prompt for credentials (a private/invalid URL would otherwise hang
+    # until timeout); GIT_TERMINAL_PROMPT/ASKPASS make auth fail fast.
+    env = {
+        **os.environ,
+        "GIT_TERMINAL_PROMPT": "0",
+        "GIT_ASKPASS": "echo",
+        "GCM_INTERACTIVE": "never",
+    }
     try:
         subprocess.run(
-            ["git", "clone", "--depth", "1", url, dest],
+            # "--" stops option parsing so a URL can't be treated as a git flag.
+            ["git", "clone", "--depth", "1", "--", url, dest],
             check=True,
             capture_output=True,
             text=True,
             timeout=180,
+            env=env,
         )
     except subprocess.CalledProcessError as exc:
         shutil.rmtree(dest, ignore_errors=True)
@@ -50,12 +64,19 @@ def ingest_zip(zip_path: str, workdir: str) -> IngestResult:
 
 
 def _safe_extract(zf: zipfile.ZipFile, dest: str) -> None:
-    """Extract guarding against path-traversal (zip-slip)."""
+    """Extract guarding against path-traversal (zip-slip) and decompression bombs."""
     dest_abs = os.path.abspath(dest)
-    for member in zf.infolist():
+    infos = zf.infolist()
+    if len(infos) > MAX_ZIP_ENTRIES:
+        raise ValueError("ZIP 항목 수가 너무 많습니다.")
+    total = 0
+    for member in infos:
         target = os.path.abspath(os.path.join(dest, member.filename))
         if target != dest_abs and not target.startswith(dest_abs + os.sep):
             raise ValueError(f"안전하지 않은 ZIP 경로: {member.filename}")
+        total += member.file_size
+        if total > MAX_ZIP_UNCOMPRESSED:
+            raise ValueError("압축 해제 용량이 너무 큽니다 (zip bomb 방지).")
     zf.extractall(dest)
 
 

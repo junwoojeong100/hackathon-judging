@@ -34,6 +34,13 @@ def _normalize_stage(stage: str) -> str:
     return stage
 
 
+def _require_team_project(team_name: str, project_name: str) -> tuple[str, str]:
+    team, project = (team_name or "").strip(), (project_name or "").strip()
+    if not team or not project:
+        raise HTTPException(status_code=400, detail="팀명과 프로젝트명을 입력하세요.")
+    return team, project
+
+
 @router.get("", response_model=list[SubmissionOut])
 def list_submissions(
     team: str | None = Query(default=None, description="팀명으로 필터(제출 이력 조회)"),
@@ -64,10 +71,11 @@ def create_github_submission(
     url = payload.github_url.strip()
     if not url.startswith("http"):
         raise HTTPException(status_code=400, detail="유효한 GitHub URL을 입력하세요.")
+    team, project = _require_team_project(payload.team_name, payload.project_name)
 
     sub = Submission(
-        team_name=payload.team_name.strip(),
-        project_name=payload.project_name.strip(),
+        team_name=team,
+        project_name=project,
         source_type="github",
         source_ref=url,
         deployment_url=(payload.deployment_url or "").strip(),
@@ -95,10 +103,11 @@ async def create_zip_submission(
 ):
     if not (file.filename or "").lower().endswith(".zip"):
         raise HTTPException(status_code=400, detail="ZIP 파일만 업로드할 수 있습니다.")
+    team, project = _require_team_project(team_name, project_name)
 
     sub = Submission(
-        team_name=team_name.strip(),
-        project_name=project_name.strip(),
+        team_name=team,
+        project_name=project,
         source_type="zip",
         source_ref="pending",
         deployment_url=(deployment_url or "").strip(),

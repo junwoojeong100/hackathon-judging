@@ -1,4 +1,16 @@
-from app.services.azure_detect import AzureEvidence, azure_bonus_points, detect_azure
+from app.services.azure_detect import (
+    AzureEvidence,
+    _is_azure_host,
+    azure_bonus_points,
+    detect_azure,
+)
+
+
+def test_is_azure_host_requires_dot_boundary():
+    assert _is_azure_host("https://app.azurewebsites.net") is True
+    assert _is_azure_host("https://azurewebsites.net") is True
+    assert _is_azure_host("https://myazurewebsites.net") is False  # spoof attempt
+    assert _is_azure_host("https://evil.com") is False
 
 
 def test_azure_bonus_none_when_not_detected():

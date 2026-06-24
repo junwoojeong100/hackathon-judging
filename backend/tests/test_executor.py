@@ -48,6 +48,14 @@ def test_parse_tests_java_maven():
     assert _parse_tests("java-maven", log) == (6, 2)  # 8 - 1 - 1 passed, 1+1 failed
 
 
+def test_parse_tests_go():
+    log = (
+        "=== RUN   TestA\n--- PASS: TestA (0.00s)\n"
+        "=== RUN   TestB\n--- FAIL: TestB (0.00s)\nFAIL\n"
+    )
+    assert _parse_tests("go", log) == (1, 1)
+
+
 def test_score_build_failed():
     assert _score(ExecutionReport(build_ran=True, build_ok=False)) == 2.0
 

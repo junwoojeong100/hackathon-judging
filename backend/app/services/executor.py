@@ -28,15 +28,18 @@ class ExecutionReport:
 
 
 # stack -> (docker image, in-container shell script)
+# NOTE: `set -o pipefail` is REQUIRED — every gated command is piped into `tail`,
+# and without pipefail the pipeline's exit status would be tail's (always 0), so
+# build/install/test failures would be silently scored as successes.
 _NODE_SCRIPT = (
-    "set -e; "
+    "set -e; set -o pipefail; "
     "echo '::install'; npm install --no-audit --no-fund --silent 2>&1 | tail -n 40 || exit 31; "
     "echo '::build'; (npm run build --if-present 2>&1 | tail -n 40) || exit 32; "
     "echo '::test'; npm test 2>&1 | tail -n 120 || exit 33; "
     "echo '::done'"
 )
 _PY_SCRIPT = (
-    "set -e; "
+    "set -e; set -o pipefail; "
     "echo '::install'; "
     "if [ -f requirements.txt ]; then pip install -q -r requirements.txt 2>&1 | tail -n 40 || exit 31; fi; "
     "if [ -f pyproject.toml ] && [ ! -f requirements.txt ]; then pip install -q . 2>&1 | tail -n 40 || exit 31; fi; "
@@ -45,27 +48,27 @@ _PY_SCRIPT = (
     "echo '::done'"
 )
 _GO_SCRIPT = (
-    "set -e; "
+    "set -e; set -o pipefail; "
     "echo '::build'; go build ./... 2>&1 | tail -n 40 || exit 32; "
-    "echo '::test'; go test ./... 2>&1 | tail -n 120 || exit 33; "
+    "echo '::test'; go test -v ./... 2>&1 | tail -n 200 || exit 33; "
     "echo '::done'"
 )
 _DOTNET_SCRIPT = (
-    "set -e; "
+    "set -e; set -o pipefail; "
     "echo '::install'; dotnet restore 2>&1 | tail -n 40 || exit 31; "
     "echo '::build'; dotnet build -c Release 2>&1 | tail -n 40 || exit 32; "
     "echo '::test'; dotnet test -c Release 2>&1 | tail -n 160 || exit 33; "
     "echo '::done'"
 )
 _JAVA_MAVEN_SCRIPT = (
-    "set -e; "
+    "set -e; set -o pipefail; "
     "echo '::install'; mvn -B -q -DskipTests dependency:go-offline 2>&1 | tail -n 40 || exit 31; "
     "echo '::build'; mvn -B -q -DskipTests package 2>&1 | tail -n 40 || exit 32; "
     "echo '::test'; mvn -B test 2>&1 | tail -n 200 || exit 33; "
     "echo '::done'"
 )
 _JAVA_GRADLE_SCRIPT = (
-    "set -e; "
+    "set -e; set -o pipefail; "
     "echo '::build'; gradle --no-daemon -q build -x test 2>&1 | tail -n 40 || exit 32; "
     "echo '::test'; gradle --no-daemon test 2>&1 | tail -n 200 || exit 33; "
     "echo '::done'"
@@ -146,6 +149,10 @@ def _parse_tests(stack: str, log: str) -> tuple[int, int]:
         m = re.search(r"Failed:\s*(\d+)", log)
         if m:
             failed = int(m.group(1))
+    elif stack == "go":
+        # `go test -v` emits "--- PASS: TestX" / "--- FAIL: TestY"
+        passed = len(re.findall(r"^--- PASS:", log, re.MULTILINE))
+        failed = len(re.findall(r"^--- FAIL:", log, re.MULTILINE))
     elif stack.startswith("java"):
         # Maven Surefire: "Tests run: 10, Failures: 0, Errors: 0, Skipped: 1"
         best = None
