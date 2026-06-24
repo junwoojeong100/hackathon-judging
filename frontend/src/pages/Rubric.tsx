@@ -54,7 +54,7 @@ export default function Rubric() {
                 <td className="strong">{c.name}</td>
                 <td className="strong">{c.weight}</td>
                 <td>
-                  <span className="chip">AI 평가</span>
+                  <span className="chip">🤖 AI 채점</span>
                 </td>
                 <td className="muted small">{c.description}</td>
               </tr>
@@ -66,33 +66,34 @@ export default function Rubric() {
                   <td className="strong">실행 검증</td>
                   <td className="strong">{execWeight}</td>
                   <td>
-                    <span className="chip">자동·결정적</span>
+                    <span className="chip">⚙️ 자동 측정</span>
                   </td>
                   <td className="muted small">
-                    Docker 샌드박스에서 실제로 빌드·테스트를 실행한 결과
-                    (Node·Python·Go·.NET·Java). 빌드 성공·테스트 통과율로 0–10 환산.
+                    코드를 Docker 안에서 <b>실제로 실행</b>해 빌드가 되는지, 테스트가
+                    통과하는지 확인합니다(Node·Python·Go·.NET·Java). 빌드 성공·테스트
+                    통과율을 0–10점으로 환산합니다.
                   </td>
                 </tr>
                 <tr>
                   <td className="strong">☁️ Azure 배포</td>
                   <td className="strong">{azurePts}</td>
                   <td>
-                    <span className="chip">자동·결정적</span>
+                    <span className="chip">⚙️ 자동 감지</span>
                   </td>
                   <td className="muted small">
-                    Azure 배포 증거(azure.yaml·bicep·infra·GitHub Actions·Azure 호스트명 등)
-                    감지 시 {azurePts}점, 미감지 시 0점.
+                    Azure에 배포한 흔적(azure.yaml·bicep·infra 폴더·GitHub Actions·Azure
+                    주소 등)이 있으면 {azurePts}점, 없으면 0점.
                   </td>
                 </tr>
                 <tr>
                   <td className="strong">🧩 Microsoft AI 스택</td>
                   <td className="strong">{msPts}</td>
                   <td>
-                    <span className="chip">자동·결정적</span>
+                    <span className="chip">⚙️ 자동 감지</span>
                   </td>
                   <td className="muted small">
                     Foundry·Agent Framework·Azure AI Search·Foundry IQ·Agent Service
-                    중 하나 이상 사용 시 {msPts}점, 미사용 시 0점.
+                    중 하나라도 쓰면 {msPts}점, 안 쓰면 0점.
                   </td>
                 </tr>
               </>
@@ -112,6 +113,19 @@ export default function Rubric() {
         <p className="muted small">
           각 항목은 0–10으로 채점되어 <b>(점수/10 × 20)</b>으로 환산됩니다. 채점 기준은 고정이며 수정할 수 없습니다.
         </p>
+        <div className="muted small" style={{ marginTop: 10, lineHeight: 1.7 }}>
+          <p style={{ margin: '0 0 4px' }}><b>채점 방식은 두 가지입니다</b></p>
+          <p style={{ margin: '0 0 4px' }}>
+            🤖 <b>AI 채점</b> — gpt-5.4가 코드와 문서를 직접 읽고 점수를 매깁니다
+            (기능 구현·완성도, 문서화). 사람이 심사하듯 완성도를 해석하므로 같은 코드라도
+            점수가 약간 달라질 수 있습니다.
+          </p>
+          <p style={{ margin: 0 }}>
+            ⚙️ <b>자동(측정·감지)</b> — 사람이나 AI의 주관 없이 컴퓨터가 사실만 확인합니다.
+            코드를 실제로 돌려 빌드·테스트 통과를 측정하거나(실행 검증), Azure 배포·Microsoft
+            AI 스택을 썼는지 감지합니다. <b>같은 제출이면 언제나 같은 결과</b>가 나옵니다.
+          </p>
+        </div>
       </div>
     </div>
   )
