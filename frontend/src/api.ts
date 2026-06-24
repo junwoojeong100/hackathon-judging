@@ -38,6 +38,7 @@ export interface Health {
   execution_weight: number
   azure_points: number
   ms_stack_points: number
+  ms_stack_per: number
 }
 
 export const api = {

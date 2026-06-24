@@ -165,11 +165,11 @@ def run_pipeline(submission_id: int) -> None:
         # Base criteria = 실행 검증 20 + 기능 구현·완성도 20 + 문서화 20 = 60.
         base100 = compute_absolute(normalized, weights)
 
-        # Required criteria (each 20, total capped at 100):
+        # Required criteria:
         #  - Azure 배포: deployment evidence detected -> full points, else 0
-        #  - Microsoft AI 스택: any MS AI component detected -> full points, else 0
+        #  - Microsoft AI 스택: per-component points (5 each), capped at 20
         azure_pts = azure_points(azure, settings.azure_points)
-        ms_pts = ms_stack_points(ms_stack, settings.ms_stack_points)
+        ms_pts = ms_stack_points(ms_stack, settings.ms_stack_per, settings.ms_stack_points)
 
         judgment.base_score = base100
         judgment.azure_detected = azure.detected

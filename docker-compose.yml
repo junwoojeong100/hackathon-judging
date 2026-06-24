@@ -22,6 +22,7 @@ services:
       ADMIN_TOKEN: ${ADMIN_TOKEN:-}
       AZURE_POINTS: ${AZURE_POINTS:-20}
       MS_STACK_POINTS: ${MS_STACK_POINTS:-20}
+      MS_STACK_PER: ${MS_STACK_PER:-5}
       # Execution-based scoring needs Docker. Inside this container it is OFF by
       # default; run the backend on the host (or mount the Docker socket) to enable.
       ENABLE_EXECUTION: ${ENABLE_EXECUTION:-false}

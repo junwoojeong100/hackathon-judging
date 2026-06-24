@@ -27,7 +27,8 @@ class Settings(BaseSettings):
 
     # Azure deployment / Microsoft AI stack — required criteria (each 20 points).
     azure_points: int = 20
-    ms_stack_points: int = 20
+    ms_stack_points: int = 20  # max for the MS AI stack criterion
+    ms_stack_per: int = 5  # points awarded per detected MS AI component (cap = ms_stack_points)
 
     # Optional admin token — when set, mutating endpoints require X-Admin-Token.
     admin_token: str = ""

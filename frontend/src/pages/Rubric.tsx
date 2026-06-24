@@ -25,6 +25,7 @@ export default function Rubric() {
   const aiTotal = criteria.reduce((s, c) => s + (Number(c.weight) || 0), 0)
   const azurePts = health?.azure_points ?? 0
   const msPts = health?.ms_stack_points ?? 0
+  const msPer = health?.ms_stack_per ?? 5
   const total = aiTotal + execWeight + azurePts + msPts
 
   return (
@@ -92,8 +93,10 @@ export default function Rubric() {
                     <span className="chip">⚙️ 자동 감지</span>
                   </td>
                   <td className="muted small">
-                    Foundry·Agent Framework·Azure AI Search·Foundry IQ·Agent Service
-                    중 하나라도 쓰면 {msPts}점, 안 쓰면 0점.
+                    아래 4가지를 쓸 때마다 <b>{msPer}점씩</b>, 최대 {msPts}점입니다.
+                    ① Foundry 모델 ② Azure AI Search ③ Microsoft Agent Framework
+                    ④ 그 외 Azure AI 서비스(Speech·Vision·Language·Document
+                    Intelligence·Content Understanding·Foundry IQ 등). 하나도 안 쓰면 0점.
                   </td>
                 </tr>
               </>

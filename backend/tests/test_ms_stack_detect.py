@@ -9,7 +9,7 @@ def test_detect_foundry_and_search():
     digest = "import azure.ai.projects\nfrom azure.search.documents import SearchClient"
     ev = detect_ms_stack(digest)
     assert ev.detected is True
-    assert "Microsoft Foundry" in ev.components
+    assert "Foundry Models" in ev.components
     assert "Azure AI Search" in ev.components
 
 
@@ -19,15 +19,23 @@ def test_detect_agent_framework():
     assert "Microsoft Agent Framework" in ev.components
 
 
+def test_detect_other_ai_service():
+    digest = "from azure.ai.documentintelligence import DocumentIntelligenceClient"
+    ev = detect_ms_stack(digest)
+    assert "기타 Azure AI 서비스" in ev.components
+
+
 def test_detect_none():
     ev = detect_ms_stack("import express from 'express'\nconsole.log('hello')")
     assert ev.detected is False
     assert ev.components == []
 
 
-def test_ms_points_full_when_detected_else_zero():
+def test_ms_points_graded_by_component():
     one = MsStackEvidence(detected=True, components=["A"])
-    four = MsStackEvidence(detected=True, components=["A", "B", "C", "D"])
-    assert ms_stack_points(one, 20) == 20.0
-    assert ms_stack_points(four, 20) == 20.0  # required: flat points regardless of count
-    assert ms_stack_points(MsStackEvidence(), 20) == 0.0
+    two = MsStackEvidence(detected=True, components=["A", "B"])
+    five = MsStackEvidence(detected=True, components=["A", "B", "C", "D", "E"])
+    assert ms_stack_points(one, 5, 20) == 5.0
+    assert ms_stack_points(two, 5, 20) == 10.0
+    assert ms_stack_points(five, 5, 20) == 20.0  # capped at max
+    assert ms_stack_points(MsStackEvidence(), 5, 20) == 0.0

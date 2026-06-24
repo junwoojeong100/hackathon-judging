@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../api'
+import type { Health } from '../api'
 import ScoreBar from '../components/ScoreBar'
 import StatusBadge from '../components/StatusBadge'
 import StageBadge from '../components/StageBadge'
@@ -14,6 +15,11 @@ export default function SubmissionDetail() {
   const [history, setHistory] = useState<Submission[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [health, setHealth] = useState<Health | null>(null)
+
+  useEffect(() => {
+    api.health().then(setHealth).catch(() => {})
+  }, [])
 
   useEffect(() => {
     let timer: number | undefined
@@ -166,10 +172,13 @@ export default function SubmissionDetail() {
             )}
           </div>
 
-          <div className={`card ms-card${j.ms_stack_detected ? '' : ' unmet'}`}>
+          <div className={`card ms-card${j.ms_stack_score > 0 ? '' : ' unmet'}`}>
             <div>
               <span className="stage stage-ms">
-                🧩 Microsoft AI 스택 (필수) · {j.ms_stack_detected ? '충족' : '미충족'} {j.ms_stack_score.toFixed(0)}점
+                🧩 Microsoft AI 스택 (필수) · {j.ms_stack_score.toFixed(0)}/{health?.ms_stack_points ?? 20}점
+              </span>
+              <span className="muted small" style={{ marginLeft: 10 }}>
+                구성요소당 {health?.ms_stack_per ?? 5}점
               </span>
             </div>
             {j.ms_stack_signals ? (

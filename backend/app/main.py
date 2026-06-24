@@ -54,4 +54,5 @@ def health():
         "execution_weight": settings.execution_weight,
         "azure_points": settings.azure_points,
         "ms_stack_points": settings.ms_stack_points,
+        "ms_stack_per": settings.ms_stack_per,
     }
