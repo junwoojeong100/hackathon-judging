@@ -87,7 +87,7 @@ export default function SubmissionDetail() {
           </span>
         </div>
         <div className="detail-actions">
-          {j && <div className="overall">종합 {j.overall_score.toFixed(1)}<span> / 10</span></div>}
+          {j && <div className="overall">종합 {j.overall_score.toFixed(1)}<span> / 100</span></div>}
           <button className="btn" onClick={rejudge} disabled={isInProgress(sub.status)}>
             재심사
           </button>

@@ -74,7 +74,7 @@ export default function Leaderboard() {
                     <StageBadge stage={e.stage} />
                   </td>
                   <td>
-                    <ScoreBar value={e.overall_score} />
+                    <ScoreBar value={e.overall_score} max={100} />
                   </td>
                   <td>
                     <Link className="link" to={`/submissions/${e.submission_id}`}>

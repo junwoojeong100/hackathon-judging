@@ -18,9 +18,10 @@ services:
       # App settings
       DATABASE_URL: sqlite:////app/data/hackathon.db
       CORS_ORIGINS: http://localhost:5173,http://localhost:3000
-      # Optional admin token (blank = open). Azure bonus amount.
+      # Optional admin token (blank = open). Azure bonus range (0-100 scale).
       ADMIN_TOKEN: ${ADMIN_TOKEN:-}
-      AZURE_BONUS: ${AZURE_BONUS:-0.5}
+      AZURE_BONUS_MIN: ${AZURE_BONUS_MIN:-20}
+      AZURE_BONUS_MAX: ${AZURE_BONUS_MAX:-30}
       # Execution-based scoring needs Docker. Inside this container it is OFF by
       # default; run the backend on the host (or mount the Docker socket) to enable.
       ENABLE_EXECUTION: ${ENABLE_EXECUTION:-false}

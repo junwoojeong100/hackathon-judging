@@ -6,8 +6,11 @@ from openai import AzureOpenAI, BadRequestError
 from ..config import settings
 
 SCORING_GUIDE = (
-    "점수 기준(각 항목 0–10): 0–2 매우 미흡, 3–4 미흡, 5–6 보통, 7–8 우수, 9–10 매우 탁월. "
-    "점수 범위를 충분히 활용하고, 근거(rationale)는 실제 코드/구조를 구체적으로 인용해 한국어로 설명하세요."
+    "이 평가는 '절대 평가'입니다. 다른 제출물과 비교하지 말고, 각 기준의 고정된 절대 기준(앵커)에 따라 "
+    "0-10 점수를 매기세요. 판단 근거는 오직 제출된 저장소의 실제 산출물(소스파일·설정파일·README/문서)에서 "
+    "관찰되는 사실이어야 하며, 아이디어의 '참신함'이나 추측은 점수에 반영하지 마세요. "
+    "rationale에는 어떤 파일/코드의 어떤 내용을 보고 그 점수를 줬는지 구체적으로 인용하세요. "
+    "정보가 부족해 확인할 수 없으면 해당 항목은 낮게 평가하세요(추측으로 점수를 올리지 않음)."
 )
 
 
@@ -75,18 +78,20 @@ def _build_messages(team_name, project_name, digest_text, criteria, evidence="")
         for c in criteria
     )
     system = (
-        "당신은 해커톤 심사위원입니다. 제출된 소스코드를 공정하고 엄격하게 평가합니다. "
-        "각 채점 기준에 대해 0–10 점수와 구체적 근거를 제시하고, 전체 총평(summary)을 한국어로 작성하세요. "
+        "당신은 해커톤 심사위원입니다. 제출된 저장소의 산출물만 근거로 각 채점 기준을 "
+        "객관적·절대적으로 평가합니다. 각 기준의 설명에 있는 절대 기준(앵커)을 그대로 적용해 "
+        "0-10 점수와 구체적 근거를 제시하고, 전체 총평(summary)을 한국어로 작성하세요. "
         + SCORING_GUIDE
     )
-    evidence_block = f"\n## 실행/배포 검증 결과(참고 근거)\n{evidence}\n" if evidence else ""
+    evidence_block = (
+        f"\n## 실행/배포 검증 결과(결정적 근거 — 반드시 반영)\n{evidence}\n" if evidence else ""
+    )
     user = (
         f"## 프로젝트 정보\n팀: {team_name}\n프로젝트: {project_name}\n\n"
-        f"## 채점 기준(루브릭)\n{rubric}\n"
+        f"## 채점 기준(절대 기준 앵커 포함)\n{rubric}\n"
         f"{evidence_block}\n"
-        f"## 제출 소스코드\n{digest_text}\n\n"
-        "위 코드를 분석하여 각 기준(criterion_key)별 점수와 근거, 그리고 summary 총평을 반환하세요. "
-        "실행/배포 검증 결과가 있으면 '기능 완성도'와 '기술적 완성도' 평가에 반드시 반영하세요."
+        f"## 제출 저장소 산출물(소스·설정·문서)\n{digest_text}\n\n"
+        "위 산출물만 근거로 각 기준(criterion_key)별 0-10 점수와 근거(인용 포함), summary 총평을 반환하세요."
     )
     return [
         {"role": "system", "content": system},

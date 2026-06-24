@@ -50,10 +50,13 @@ def test_run_pipeline_scores_submission(tmp_path, monkeypatch):
     sub = db.get(Submission, sid)
     assert sub.status == "scored"
     judgment = sub.judgments[-1]
-    assert judgment.overall_score == 8.0
+    # criteria all 8/10, no execution (None) and no Azure -> base 80.0 on 0-100 scale
+    assert judgment.overall_score == 80.0
+    assert judgment.base_score == 80.0
+    assert judgment.azure_bonus == 0.0
     assert judgment.summary == "전반적으로 우수합니다."
     assert judgment.model == "test-model"
-    assert len(judgment.scores) == 5
+    assert len(judgment.scores) == 4  # 4 objective rubric criteria (execution excluded)
     db.close()
 
 

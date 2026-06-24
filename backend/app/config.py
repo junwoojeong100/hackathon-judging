@@ -22,11 +22,12 @@ class Settings(BaseSettings):
 
     # Execution-based scoring (Docker sandbox)
     enable_execution: bool = True
-    execution_weight: int = 20
+    execution_weight: int = 25
     execution_timeout: int = 240
 
-    # Azure deployment bonus
-    azure_bonus: float = 0.5
+    # Azure deployment bonus — graded points (0–100 scale) added on top, capped at 100.
+    azure_bonus_min: float = 20.0
+    azure_bonus_max: float = 30.0
 
     # Optional admin token — when set, mutating endpoints require X-Admin-Token.
     admin_token: str = ""

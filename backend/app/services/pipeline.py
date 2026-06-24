@@ -8,7 +8,7 @@ import os
 from ..config import settings
 from ..database import SessionLocal
 from ..models import Criterion, CriterionScore, Judgment, Submission
-from .azure_detect import detect_azure
+from .azure_detect import azure_bonus_points, detect_azure
 from .collector import build_digest, render_digest
 from .executor import run_execution
 from .ingest import cleanup, ingest_github, ingest_zip
@@ -117,27 +117,33 @@ def run_pipeline(submission_id: int) -> None:
         db.add(judgment)
         db.flush()
 
-        normalized = []
-        seen = set()
+        # Map AI scores by criterion key.
+        ai_scores = {}
         for item in data.get("scores", []):
             key = item.get("criterion_key")
-            if key not in weights or key in seen:
-                continue
-            seen.add(key)
-            score = clamp_score(item.get("score"))
+            if key in weights and key not in ai_scores:
+                ai_scores[key] = (clamp_score(item.get("score")), item.get("rationale", ""))
+
+        normalized = []
+        # Persist EVERY rubric criterion (0 when the model omitted it). Using the full
+        # rubric weight as a fixed denominator makes the base score an absolute,
+        # comparable value rather than depending on which criteria happened to be scored.
+        for c in criteria:
+            key = c["key"]
+            score, rationale = ai_scores.get(key, (0.0, "산출물에서 확인할 수 없어 0점 처리"))
             db.add(
                 CriterionScore(
                     judgment_id=judgment.id,
                     criterion_key=key,
-                    criterion_name=names.get(key, key),
+                    criterion_name=names[key],
                     score=score,
                     weight=weights[key],
-                    rationale=item.get("rationale", ""),
+                    rationale=rationale,
                 )
             )
             normalized.append({"criterion_key": key, "score": score})
 
-        # Execution as a deterministic, weighted criterion (when applicable).
+        # Execution as a deterministic, weighted criterion (when it actually ran).
         if exec_report and exec_report.score is not None:
             weights["execution"] = settings.execution_weight
             db.add(
@@ -153,15 +159,16 @@ def run_pipeline(submission_id: int) -> None:
             )
             normalized.append({"criterion_key": "execution", "score": exec_report.score})
 
-        base = compute_overall(normalized, weights)
+        # Weighted base on a 0-100 scale (criteria are 0-10; weights sum to ~100).
+        base100 = round(compute_overall(normalized, weights) * 10.0, 1)
 
-        # Azure deployment bonus (added on top, capped at 10).
-        bonus = settings.azure_bonus if azure.detected else 0.0
-        judgment.base_score = base
+        # Azure deployment bonus (graded 20-30), added on top and capped at 100.
+        bonus = azure_bonus_points(azure, settings.azure_bonus_min, settings.azure_bonus_max)
+        judgment.base_score = base100
         judgment.azure_detected = azure.detected
         judgment.azure_bonus = bonus
         judgment.azure_signals = ", ".join(azure.signals)
-        judgment.overall_score = round(min(10.0, base + bonus), 2)
+        judgment.overall_score = round(min(100.0, base100 + bonus), 1)
 
         submission.status = "scored"
         db.commit()

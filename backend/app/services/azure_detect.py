@@ -47,7 +47,8 @@ _CONTENT_KEYWORDS = {
 @dataclass
 class AzureEvidence:
     detected: bool = False
-    url_live: bool = False
+    has_iac: bool = False  # azd/bicep/infra/CI deploy config present
+    url_live: bool = False  # provided Azure URL responded
     signals: list[str] = field(default_factory=list)
 
 
@@ -94,7 +95,20 @@ def _check_live(url: str) -> bool:
 
 def detect_azure(root_dir: str, digest_text: str, deployment_url: str = "") -> AzureEvidence:
     evidence = AzureEvidence()
-    signals = _scan_files(root_dir) + _scan_content(digest_text)
+    file_signals = _scan_files(root_dir)
+    content_signals = _scan_content(digest_text)
+    signals = file_signals + content_signals
+
+    # IaC / CI deploy config is "strong" evidence (vs. a mere hostname mention).
+    iac_content = {
+        "GitHub Actions Azure 배포",
+        "GitHub Actions Azure 로그인",
+        "GitHub Actions SWA 배포",
+        "azd 배포 명령",
+        "Bicep/ARM App Service 리소스",
+        "Bicep/ARM Container Apps 리소스",
+    }
+    evidence.has_iac = bool(file_signals) or any(s in iac_content for s in content_signals)
 
     if deployment_url:
         if _is_azure_host(deployment_url):
@@ -108,3 +122,20 @@ def detect_azure(root_dir: str, digest_text: str, deployment_url: str = "") -> A
     evidence.signals = [s for s in signals if not (s in seen or seen.add(s))]
     evidence.detected = len(evidence.signals) > 0
     return evidence
+
+
+def azure_bonus_points(evidence: AzureEvidence, min_pts: float, max_pts: float) -> float:
+    """Graded bonus in [min_pts, max_pts] when Azure deployment evidence exists, else 0.
+
+    base = min_pts (any detection); + half-span for real IaC/CI config;
+    + half-span for a verified live Azure URL. Capped at max_pts.
+    """
+    if not evidence.detected:
+        return 0.0
+    span = max(0.0, max_pts - min_pts)
+    pts = min_pts
+    if evidence.has_iac:
+        pts += span / 2
+    if evidence.url_live:
+        pts += span / 2
+    return round(min(max_pts, pts), 1)
