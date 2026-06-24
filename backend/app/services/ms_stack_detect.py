@@ -1,4 +1,4 @@
-"""Detect use of Microsoft AI technologies in a submission to award a graded bonus.
+"""Detect use of Microsoft AI technologies — a required scoring criterion.
 
 Components: Microsoft Foundry, Microsoft Agent Framework, Azure AI Search,
 Foundry IQ, Foundry Agent Service / Hosted Agent. Detection scans the collected
@@ -69,11 +69,7 @@ def detect_ms_stack(digest_text: str) -> MsStackEvidence:
     return evidence
 
 
-def ms_stack_bonus_points(
-    evidence: MsStackEvidence, min_pts: float, max_pts: float, per: float
-) -> float:
-    """Graded by number of distinct Microsoft AI components used."""
-    if not evidence.detected:
-        return 0.0
-    pts = per * len(evidence.components)
-    return round(min(max_pts, max(min_pts, pts)), 1)
+def ms_stack_points(evidence: MsStackEvidence, points: float) -> float:
+    """Microsoft AI stack usage is a required criterion: full points when any
+    component is detected, otherwise 0."""
+    return float(points) if evidence.detected else 0.0

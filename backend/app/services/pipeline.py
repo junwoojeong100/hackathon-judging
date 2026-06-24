@@ -8,12 +8,12 @@ import os
 from ..config import settings
 from ..database import SessionLocal
 from ..models import Criterion, CriterionScore, Judgment, Submission
-from .azure_detect import azure_bonus_points, detect_azure
+from .azure_detect import azure_points, detect_azure
 from .collector import build_digest, render_digest
 from .executor import run_execution
 from .ingest import cleanup, ingest_github, ingest_zip
 from .judge import generate_scores
-from .ms_stack_detect import detect_ms_stack, ms_stack_bonus_points
+from .ms_stack_detect import detect_ms_stack, ms_stack_points
 from .scoring import clamp_score, compute_absolute
 
 
@@ -87,7 +87,7 @@ def run_pipeline(submission_id: int) -> None:
             except Exception:  # noqa: BLE001 - execution is best-effort
                 exec_report = None
 
-        # --- Deployment / tech-stack bonuses (deterministic, additive) ---
+        # --- Required criteria: Azure 배포 / Microsoft AI 스택 (deterministic) ---
         azure = detect_azure(ingest_res.root_dir, digest_text, submission.deployment_url or "")
         ms_stack = detect_ms_stack(digest_text)
 
@@ -161,27 +161,22 @@ def run_pipeline(submission_id: int) -> None:
             )
             normalized.append({"criterion_key": "execution", "score": exec_report.score})
 
-        # Absolute base points: each criterion contributes (score/10) * weight.
-        # Max base = sum of weights (AI rubric 30 + 실행 검증 50 = 80 by default).
+        # Absolute base points: each AI-rubric criterion contributes (score/10) * weight.
+        # Base criteria = 실행 검증 20 + 기능 구현·완성도 20 + 문서화 20 = 60.
         base100 = compute_absolute(normalized, weights)
 
-        # Bonuses (added on top, total capped at 100):
-        #  - Azure deployment: detected -> min, verified live -> max
-        #  - Microsoft AI stack: graded by number of components used
-        azure_pts = azure_bonus_points(azure, settings.azure_bonus_min, settings.azure_bonus_max)
-        ms_pts = ms_stack_bonus_points(
-            ms_stack,
-            settings.ms_stack_bonus_min,
-            settings.ms_stack_bonus_max,
-            settings.ms_stack_bonus_per,
-        )
+        # Required criteria (each 20, total capped at 100):
+        #  - Azure 배포: deployment evidence detected -> full points, else 0
+        #  - Microsoft AI 스택: any MS AI component detected -> full points, else 0
+        azure_pts = azure_points(azure, settings.azure_points)
+        ms_pts = ms_stack_points(ms_stack, settings.ms_stack_points)
 
         judgment.base_score = base100
         judgment.azure_detected = azure.detected
-        judgment.azure_bonus = azure_pts
+        judgment.azure_score = azure_pts
         judgment.azure_signals = ", ".join(azure.signals)
         judgment.ms_stack_detected = ms_stack.detected
-        judgment.ms_stack_bonus = ms_pts
+        judgment.ms_stack_score = ms_pts
         judgment.ms_stack_signals = ", ".join(ms_stack.signals)
         judgment.overall_score = round(min(100.0, base100 + azure_pts + ms_pts), 1)
 

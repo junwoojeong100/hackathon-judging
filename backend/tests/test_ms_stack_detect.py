@@ -1,7 +1,7 @@
 from app.services.ms_stack_detect import (
     MsStackEvidence,
     detect_ms_stack,
-    ms_stack_bonus_points,
+    ms_stack_points,
 )
 
 
@@ -25,11 +25,9 @@ def test_detect_none():
     assert ev.components == []
 
 
-def test_ms_bonus_graded_by_count():
+def test_ms_points_full_when_detected_else_zero():
     one = MsStackEvidence(detected=True, components=["A"])
-    two = MsStackEvidence(detected=True, components=["A", "B"])
     four = MsStackEvidence(detected=True, components=["A", "B", "C", "D"])
-    assert ms_stack_bonus_points(one, 10, 30, 10) == 10.0
-    assert ms_stack_bonus_points(two, 10, 30, 10) == 20.0
-    assert ms_stack_bonus_points(four, 10, 30, 10) == 30.0  # capped at max
-    assert ms_stack_bonus_points(MsStackEvidence(), 10, 30, 10) == 0.0
+    assert ms_stack_points(one, 20) == 20.0
+    assert ms_stack_points(four, 20) == 20.0  # required: flat points regardless of count
+    assert ms_stack_points(MsStackEvidence(), 20) == 0.0

@@ -1,7 +1,7 @@
 from app.services.azure_detect import (
     AzureEvidence,
     _is_azure_host,
-    azure_bonus_points,
+    azure_points,
     detect_azure,
 )
 
@@ -13,18 +13,15 @@ def test_is_azure_host_requires_dot_boundary():
     assert _is_azure_host("https://evil.com") is False
 
 
-def test_azure_bonus_none_when_not_detected():
-    assert azure_bonus_points(AzureEvidence(detected=False), 20, 30) == 0.0
+def test_azure_points_zero_when_not_detected():
+    assert azure_points(AzureEvidence(detected=False), 20) == 0.0
 
 
-def test_azure_bonus_detected_not_live_is_min():
+def test_azure_points_full_when_detected():
     ev = AzureEvidence(detected=True, has_iac=True, url_live=False)
-    assert azure_bonus_points(ev, 20, 30) == 20.0
-
-
-def test_azure_bonus_live_is_max():
-    ev = AzureEvidence(detected=True, has_iac=False, url_live=True)
-    assert azure_bonus_points(ev, 20, 30) == 30.0
+    assert azure_points(ev, 20) == 20.0
+    live = AzureEvidence(detected=True, has_iac=False, url_live=True)
+    assert azure_points(live, 20) == 20.0
 
 
 def test_detect_azure_bicep_file(tmp_path):

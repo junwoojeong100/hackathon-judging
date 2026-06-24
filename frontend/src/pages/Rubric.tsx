@@ -23,8 +23,9 @@ export default function Rubric() {
 
   const execWeight = health?.execution_enabled ? health.execution_weight : 0
   const aiTotal = criteria.reduce((s, c) => s + (Number(c.weight) || 0), 0)
-  const baseTotal = aiTotal + execWeight
-  const bonusMax = health ? health.azure_bonus_max + health.ms_stack_bonus_max : 0
+  const azurePts = health?.azure_points ?? 0
+  const msPts = health?.ms_stack_points ?? 0
+  const total = aiTotal + execWeight + azurePts + msPts
 
   return (
     <div>
@@ -73,24 +74,25 @@ export default function Rubric() {
                   </td>
                 </tr>
                 <tr>
-                  <td className="strong">☁️ Azure 배포 가산점</td>
-                  <td className="strong">+{health.azure_bonus_max}</td>
+                  <td className="strong">☁️ Azure 배포</td>
+                  <td className="strong">{azurePts}</td>
                   <td>
-                    <span className="chip">자동·가산</span>
+                    <span className="chip">자동·결정적</span>
                   </td>
                   <td className="muted small">
-                    Azure 배포 증거(azure.yaml·bicep·호스트명 등) 감지 시 +{health.azure_bonus_max}.
+                    Azure 배포 증거(azure.yaml·bicep·infra·GitHub Actions·Azure 호스트명 등)
+                    감지 시 {azurePts}점, 미감지 시 0점.
                   </td>
                 </tr>
                 <tr>
-                  <td className="strong">🧩 MS AI 스택 가산점</td>
-                  <td className="strong">+{health.ms_stack_bonus_max}</td>
+                  <td className="strong">🧩 Microsoft AI 스택</td>
+                  <td className="strong">{msPts}</td>
                   <td>
-                    <span className="chip">자동·가산</span>
+                    <span className="chip">자동·결정적</span>
                   </td>
                   <td className="muted small">
                     Foundry·Agent Framework·Azure AI Search·Foundry IQ·Agent Service
-                    중 하나 이상 사용 시 +{health.ms_stack_bonus_max}.
+                    중 하나 이상 사용 시 {msPts}점, 미사용 시 0점.
                   </td>
                 </tr>
               </>
@@ -99,10 +101,10 @@ export default function Rubric() {
           <tfoot>
             <tr>
               <td className="strong">합계</td>
-              <td className="strong">100</td>
+              <td className="strong">{total}</td>
               <td colSpan={2} className="muted small">
-                기본 {baseTotal}(AI {aiTotal} + 실행 {execWeight}) + 가산 최대 {bonusMax} ·
-                종합 = min(100, 기본 + 가산)
+                5개 필수 항목(기능 구현·완성도 · 문서화 · 실행 검증 · Azure 배포 ·
+                Microsoft AI 스택) 각 20점, 종합 = min(100, 합계)
               </td>
             </tr>
           </tfoot>

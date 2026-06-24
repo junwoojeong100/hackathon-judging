@@ -188,7 +188,7 @@ export default function Submissions() {
           )}
 
           <label>
-            Azure 배포 URL <span className="muted small">(선택 · 입력 시 가산점 평가)</span>
+            Azure 배포 URL <span className="muted small">(선택 · 입력 시 라이브 상태 확인)</span>
             <input
               value={deploymentUrl}
               onChange={(e) => setDeploymentUrl(e.target.value)}

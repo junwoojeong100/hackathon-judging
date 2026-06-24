@@ -20,10 +20,10 @@ export interface Judgment {
   overall_score: number
   base_score: number
   azure_detected: boolean
-  azure_bonus: number
+  azure_score: number
   azure_signals: string
   ms_stack_detected: boolean
-  ms_stack_bonus: number
+  ms_stack_score: number
   ms_stack_signals: string
   summary: string
   model: string

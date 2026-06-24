@@ -25,14 +25,9 @@ class Settings(BaseSettings):
     execution_weight: int = 20
     execution_timeout: int = 240
 
-    # Azure deployment bonus — fixed 20 when Azure deployment evidence is detected.
-    azure_bonus_min: float = 20.0
-    azure_bonus_max: float = 20.0
-
-    # Microsoft AI stack bonus — fixed 20 when any MS AI component is detected.
-    ms_stack_bonus_min: float = 20.0
-    ms_stack_bonus_max: float = 20.0
-    ms_stack_bonus_per: float = 20.0
+    # Azure deployment / Microsoft AI stack — required criteria (each 20 points).
+    azure_points: int = 20
+    ms_stack_points: int = 20
 
     # Optional admin token — when set, mutating endpoints require X-Admin-Token.
     admin_token: str = ""

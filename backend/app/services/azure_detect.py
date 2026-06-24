@@ -1,5 +1,5 @@
-"""Detect evidence that a submission is deployed to (or deployable on) Azure,
-to award a configurable bonus. Looks at IaC / CI-CD / config files and known
+"""Detect evidence that a submission is deployed to (or deployable on) Azure —
+a required scoring criterion. Looks at IaC / CI-CD / config files and known
 Azure hostnames, plus an optional user-supplied live deployment URL.
 """
 import os
@@ -83,7 +83,7 @@ def _is_azure_host(url: str) -> bool:
     except Exception:
         return False
     # Require a real dot boundary so "myazurewebsites.net" doesn't match
-    # "azurewebsites.net" (would otherwise allow spoofed bonus / SSRF).
+    # "azurewebsites.net" (would otherwise allow spoofed evidence / SSRF).
     return any(host == s or host.endswith("." + s) for s in AZURE_HOST_SUFFIXES)
 
 
@@ -129,9 +129,7 @@ def detect_azure(root_dir: str, digest_text: str, deployment_url: str = "") -> A
     return evidence
 
 
-def azure_bonus_points(evidence: AzureEvidence, min_pts: float, max_pts: float) -> float:
-    """Graded bonus: min when Azure deployment evidence exists, max when the
-    submitted Azure URL actually responds (verified live deployment). 0 if none."""
-    if not evidence.detected:
-        return 0.0
-    return round(max_pts if evidence.url_live else min_pts, 1)
+def azure_points(evidence: AzureEvidence, points: float) -> float:
+    """Azure deployment is a required criterion: full points when deployment
+    evidence is detected, otherwise 0."""
+    return float(points) if evidence.detected else 0.0

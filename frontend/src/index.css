@@ -130,6 +130,18 @@ a {
   background: var(--purple-soft);
 }
 
+.azure-card.unmet,
+.ms-card.unmet {
+  border-color: var(--border);
+  background: var(--bg);
+}
+
+.azure-card.unmet .stage-final,
+.ms-card.unmet .stage-ms {
+  background: var(--bg);
+  color: var(--muted);
+}
+
 .stage-ms {
   background: var(--purple-soft);
   color: var(--purple);

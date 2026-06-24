@@ -150,26 +150,34 @@ export default function SubmissionDetail() {
 
       {j && (
         <>
-          {(j.azure_detected || j.azure_bonus > 0) && (
-            <div className="card azure-card">
-              <div>
-                <span className="stage stage-final">☁️ Azure 배포 가산점 +{j.azure_bonus.toFixed(1)}</span>
-                <span className="muted small" style={{ marginLeft: 10 }}>
-                  기본 {j.base_score.toFixed(1)} → 종합 {j.overall_score.toFixed(1)}
-                </span>
-              </div>
-              {j.azure_signals && <p className="muted small">감지된 신호: {j.azure_signals}</p>}
+          <div className={`card azure-card${j.azure_detected ? '' : ' unmet'}`}>
+            <div>
+              <span className="stage stage-final">
+                ☁️ Azure 배포 (필수) · {j.azure_detected ? '충족' : '미충족'} {j.azure_score.toFixed(0)}점
+              </span>
+              <span className="muted small" style={{ marginLeft: 10 }}>
+                기본 {j.base_score.toFixed(1)} → 종합 {j.overall_score.toFixed(1)}
+              </span>
             </div>
-          )}
+            {j.azure_signals ? (
+              <p className="muted small">감지된 신호: {j.azure_signals}</p>
+            ) : (
+              <p className="muted small">Azure 배포 증거가 감지되지 않았습니다.</p>
+            )}
+          </div>
 
-          {(j.ms_stack_detected || j.ms_stack_bonus > 0) && (
-            <div className="card ms-card">
-              <div>
-                <span className="stage stage-ms">🧩 MS AI 스택 가산점 +{j.ms_stack_bonus.toFixed(1)}</span>
-              </div>
-              {j.ms_stack_signals && <p className="muted small">사용 기술: {j.ms_stack_signals}</p>}
+          <div className={`card ms-card${j.ms_stack_detected ? '' : ' unmet'}`}>
+            <div>
+              <span className="stage stage-ms">
+                🧩 Microsoft AI 스택 (필수) · {j.ms_stack_detected ? '충족' : '미충족'} {j.ms_stack_score.toFixed(0)}점
+              </span>
             </div>
-          )}
+            {j.ms_stack_signals ? (
+              <p className="muted small">사용 기술: {j.ms_stack_signals}</p>
+            ) : (
+              <p className="muted small">Microsoft AI 스택 사용이 감지되지 않았습니다.</p>
+            )}
+          </div>
 
           {j.summary && (
             <div className="card">

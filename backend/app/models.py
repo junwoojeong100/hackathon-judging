@@ -48,13 +48,13 @@ class Judgment(Base):
 
     id = Column(Integer, primary_key=True)
     submission_id = Column(Integer, ForeignKey("submissions.id"), nullable=False)
-    overall_score = Column(Float, default=0.0)  # 0-100 weighted, incl. bonuses
-    base_score = Column(Float, default=0.0)  # weighted score before bonuses
+    overall_score = Column(Float, default=0.0)  # 0-100 total (all 5 required criteria)
+    base_score = Column(Float, default=0.0)  # AI rubric + execution subtotal
     azure_detected = Column(Boolean, default=False)
-    azure_bonus = Column(Float, default=0.0)
+    azure_score = Column(Float, default=0.0)
     azure_signals = Column(Text, default="")
     ms_stack_detected = Column(Boolean, default=False)
-    ms_stack_bonus = Column(Float, default=0.0)
+    ms_stack_score = Column(Float, default=0.0)
     ms_stack_signals = Column(Text, default="")
     summary = Column(Text, default="")
     model = Column(String, default="")
