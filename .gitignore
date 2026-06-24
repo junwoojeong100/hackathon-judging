@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Environment / secrets
+.env
+*.env
+!*.env.example
+
+# SQLite database & uploads
+backend/data/*.db
+backend/data/*.sqlite3
+backend/data/uploads/
+backend/data/workspaces/
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store

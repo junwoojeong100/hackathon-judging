@@ -1,0 +1,40 @@
+services:
+  backend:
+    build: ./backend
+    container_name: hj-backend
+    ports:
+      - "8000:8000"
+    environment:
+      # Azure OpenAI — set these in a .env file next to this compose file
+      AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:-}
+      AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
+      AZURE_OPENAI_DEPLOYMENT: ${AZURE_OPENAI_DEPLOYMENT:-gpt-4.1}
+      AZURE_OPENAI_API_VERSION: ${AZURE_OPENAI_API_VERSION:-2024-10-21}
+      # Keyless (Entra ID) auth for containers — set these to a service principal
+      # that has the "Cognitive Services OpenAI User" role (leave API key blank).
+      AZURE_CLIENT_ID: ${AZURE_CLIENT_ID:-}
+      AZURE_CLIENT_SECRET: ${AZURE_CLIENT_SECRET:-}
+      AZURE_TENANT_ID: ${AZURE_TENANT_ID:-}
+      # App settings
+      DATABASE_URL: sqlite:////app/data/hackathon.db
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+      # Optional admin token (blank = open). Azure bonus amount.
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      AZURE_BONUS: ${AZURE_BONUS:-0.5}
+      # Execution-based scoring needs Docker. Inside this container it is OFF by
+      # default; run the backend on the host (or mount the Docker socket) to enable.
+      ENABLE_EXECUTION: ${ENABLE_EXECUTION:-false}
+    volumes:
+      - ./backend/data:/app/data
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: hj-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
