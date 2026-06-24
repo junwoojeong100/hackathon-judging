@@ -364,7 +364,8 @@ a {
 }
 
 .form input,
-.rubric-table input {
+.rubric-table input,
+.rubric-table textarea {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 9px 11px;
@@ -374,8 +375,14 @@ a {
   width: 100%;
 }
 
+.rubric-table textarea {
+  resize: vertical;
+  line-height: 1.4;
+}
+
 .form input:focus,
-.rubric-table input:focus {
+.rubric-table input:focus,
+.rubric-table textarea:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--primary-soft);

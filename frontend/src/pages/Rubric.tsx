@@ -1,18 +1,22 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
+import type { Health } from '../api'
 import type { Criterion } from '../types'
 
 export default function Rubric() {
   const [criteria, setCriteria] = useState<Criterion[]>([])
+  const [health, setHealth] = useState<Health | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    api
-      .getRubric()
-      .then(setCriteria)
+    Promise.all([api.getRubric(), api.health()])
+      .then(([c, h]) => {
+        setCriteria(c)
+        setHealth(h)
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
   }, [])
@@ -63,6 +67,9 @@ export default function Rubric() {
 
   if (loading) return <div className="muted">불러오는 중…</div>
 
+  const execWeight = health?.execution_enabled ? health.execution_weight : 0
+  const baseTotal = total + execWeight
+
   return (
     <div>
       <div className="page-head">
@@ -75,15 +82,54 @@ export default function Rubric() {
       {error && <div className="alert error">{error}</div>}
       {saved && <div className="alert success">저장되었습니다.</div>}
 
+      {health && (
+        <div className="card">
+          <h3>전체 채점 구성 (0–100점)</h3>
+          <table className="table">
+            <tbody>
+              <tr>
+                <td>AI 루브릭(아래 편집 가능)</td>
+                <td className="strong" style={{ width: 120, textAlign: 'right' }}>{total}점</td>
+              </tr>
+              <tr>
+                <td>
+                  실행 검증 <span className="chip">결정적</span>{' '}
+                  <span className="muted small">
+                    {health.execution_enabled ? 'Docker 빌드·테스트' : '(비활성)'}
+                  </span>
+                </td>
+                <td className="strong" style={{ textAlign: 'right' }}>{execWeight}점</td>
+              </tr>
+              <tr>
+                <td className="strong">기본 점수 합계</td>
+                <td className="strong" style={{ textAlign: 'right' }}>
+                  {baseTotal}점 {baseTotal !== 100 && <span className="stage stage-interim">100 권장</span>}
+                </td>
+              </tr>
+              <tr>
+                <td>☁️ Azure 배포 가산점 <span className="muted small">(감지/라이브)</span></td>
+                <td style={{ textAlign: 'right' }}>+{health.azure_bonus_min}~{health.azure_bonus_max}</td>
+              </tr>
+              <tr>
+                <td>🧩 MS AI 스택 가산점 <span className="muted small">(구성요소 수)</span></td>
+                <td style={{ textAlign: 'right' }}>+{health.ms_stack_bonus_min}~{health.ms_stack_bonus_max}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p className="muted small">종합 점수 = min(100, 기본 점수 + 가산점들). 실행 검증·가산점은 코드로 결정됩니다.</p>
+        </div>
+      )}
+
       <div className="card">
+        <h3>AI 루브릭 항목 (편집)</h3>
         <table className="table rubric-table">
           <thead>
             <tr>
-              <th style={{ width: 150 }}>key</th>
-              <th style={{ width: 160 }}>이름</th>
-              <th>설명</th>
-              <th style={{ width: 90 }}>가중치</th>
-              <th style={{ width: 50 }}></th>
+              <th style={{ width: 130 }}>key</th>
+              <th style={{ width: 150 }}>이름</th>
+              <th>설명(절대 기준)</th>
+              <th style={{ width: 80 }}>가중치</th>
+              <th style={{ width: 40 }}></th>
             </tr>
           </thead>
           <tbody>
@@ -96,7 +142,8 @@ export default function Rubric() {
                   <input value={c.name} onChange={(e) => update(i, { name: e.target.value })} />
                 </td>
                 <td>
-                  <input
+                  <textarea
+                    rows={3}
                     value={c.description}
                     onChange={(e) => update(i, { description: e.target.value })}
                   />
@@ -120,7 +167,7 @@ export default function Rubric() {
           <tfoot>
             <tr>
               <td colSpan={3} className="strong">
-                가중치 합계
+                AI 루브릭 가중치 합계
               </td>
               <td className="strong">{total}</td>
               <td></td>
@@ -137,7 +184,7 @@ export default function Rubric() {
           </button>
         </div>
         <p className="muted small">
-          참고: 종합 점수는 가중치 합으로 정규화되므로 합계가 100이 아니어도 됩니다.
+          참고: AI 루브릭은 가중치 합으로 정규화되며, 위 "실행 검증"(결정적)과 합쳐 기본 점수가 됩니다.
         </p>
       </div>
     </div>

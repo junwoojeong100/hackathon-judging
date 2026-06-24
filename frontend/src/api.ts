@@ -35,6 +35,11 @@ export interface Health {
   azure_configured: boolean
   auth_required: boolean
   execution_enabled: boolean
+  execution_weight: number
+  azure_bonus_min: number
+  azure_bonus_max: number
+  ms_stack_bonus_min: number
+  ms_stack_bonus_max: number
 }
 
 export const api = {

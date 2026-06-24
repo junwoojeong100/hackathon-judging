@@ -51,4 +51,9 @@ def health():
         "azure_configured": settings.azure_configured,
         "auth_required": settings.auth_required,
         "execution_enabled": settings.enable_execution,
+        "execution_weight": settings.execution_weight,
+        "azure_bonus_min": settings.azure_bonus_min,
+        "azure_bonus_max": settings.azure_bonus_max,
+        "ms_stack_bonus_min": settings.ms_stack_bonus_min,
+        "ms_stack_bonus_max": settings.ms_stack_bonus_max,
     }
