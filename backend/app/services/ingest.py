@@ -92,3 +92,27 @@ def _effective_root(dest: str) -> str:
 
 def cleanup(path: str) -> None:
     shutil.rmtree(path, ignore_errors=True)
+    if not os.path.isdir(path):
+        return
+    # Leftovers remain: the Docker execution sandbox runs as root with a read-write
+    # bind mount, so build artifacts (node_modules, __pycache__, .pytest_cache, …)
+    # can be owned by uid 0. A non-root backend then can't unlink them and rmtree's
+    # errors were silently swallowed, leaking workspaces without bound. Reclaim
+    # ownership via a throwaway root container, then retry. Best-effort: never raise.
+    if shutil.which("docker") is None:
+        return
+    try:
+        subprocess.run(
+            [
+                "docker", "run", "--rm",
+                "-v", f"{os.path.abspath(path)}:/target",
+                "busybox", "chown", "-R",
+                f"{os.getuid()}:{os.getgid()}", "/target",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except Exception:  # noqa: BLE001 - cleanup must not crash the pipeline
+        pass
+    shutil.rmtree(path, ignore_errors=True)

@@ -1,3 +1,6 @@
+from unittest.mock import patch
+
+from app.services import azure_detect
 from app.services.azure_detect import (
     AzureEvidence,
     _is_azure_host,
@@ -49,3 +52,37 @@ def test_detect_azure_infra_dir(tmp_path):
     (infra / "deploy.bicep").write_text("// bicep")
     ev = detect_azure(str(tmp_path), "", "")
     assert ev.detected is True
+
+
+def test_detect_azure_github_actions_workflow(tmp_path):
+    # `.github/workflows/*` is pruned from the digest, so a CI-only Azure deploy
+    # must be detected by scanning the workflow files directly.
+    wf = tmp_path / ".github" / "workflows"
+    wf.mkdir(parents=True)
+    (wf / "deploy.yml").write_text(
+        "jobs:\n  build:\n    steps:\n"
+        "      - uses: azure/login@v2\n      - uses: azure/webapps-deploy@v3\n"
+    )
+    ev = detect_azure(str(tmp_path), "", "")  # empty digest on purpose
+    assert ev.detected is True
+    assert azure_points(ev, 20) == 20.0
+    assert ev.has_iac is True
+
+
+def test_nonlive_url_alone_does_not_score(tmp_path):
+    # A plausible but unreachable *.azurewebsites.net URL must not, on its own,
+    # grant the required-criterion points (anti-gaming).
+    with patch.object(azure_detect, "_check_live", return_value=False):
+        ev = detect_azure(str(tmp_path), "", "https://made-up-xyz.azurewebsites.net")
+    assert ev.detected is False
+    assert ev.url_live is False
+    assert azure_points(ev, 20) == 0.0
+
+
+def test_live_url_alone_scores(tmp_path):
+    with patch.object(azure_detect, "_check_live", return_value=True):
+        ev = detect_azure(str(tmp_path), "", "https://real-app.azurewebsites.net")
+    assert ev.detected is True
+    assert ev.url_live is True
+    assert azure_points(ev, 20) == 20.0
+

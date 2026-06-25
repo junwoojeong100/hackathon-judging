@@ -1,7 +1,24 @@
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, timezone
+from typing import Annotated, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, PlainSerializer, WithJsonSchema
+
+
+def _to_utc_iso(dt: datetime) -> str:
+    """Serialize as ISO-8601 with an explicit 'Z'. SQLite returns naive datetimes
+    (the stored values are UTC), and a naive ISO string would be read as *local*
+    time by the browser. Treat naive values as UTC so clients render the right time."""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+# datetime that always serializes to UTC ISO-8601 with a 'Z' suffix.
+UtcDateTime = Annotated[
+    datetime,
+    PlainSerializer(_to_utc_iso, return_type=str),
+    WithJsonSchema({"type": "string", "format": "date-time"}),
+]
 
 
 # ---------- Rubric ----------
@@ -41,7 +58,7 @@ class JudgmentOut(BaseModel):
     ms_stack_signals: str = ""
     summary: str
     model: str
-    created_at: datetime
+    created_at: UtcDateTime
     scores: list[CriterionScoreOut] = []
 
 
@@ -67,7 +84,7 @@ class SubmissionOut(BaseModel):
     stage: str
     status: str
     error_message: str
-    created_at: datetime
+    created_at: UtcDateTime
     latest_judgment: Optional[JudgmentOut] = None
 
 

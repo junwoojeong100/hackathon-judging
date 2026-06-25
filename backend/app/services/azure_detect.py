@@ -77,6 +77,31 @@ def _scan_content(digest_text: str) -> list[str]:
     return found
 
 
+def _scan_ci_workflows(root_dir: str) -> list[str]:
+    """GitHub Actions workflows live under `.github/workflows/`, which the code
+    collector prunes from the digest (it skips dot-directories). Scan those YAML
+    files directly so CI-based Azure deploys (azure/login, azure/webapps-deploy,
+    azure/static-web-apps-deploy, …) are still detected."""
+    found: list[str] = []
+    wf_dir = os.path.join(root_dir, ".github", "workflows")
+    if not os.path.isdir(wf_dir):
+        return found
+    for fn in os.listdir(wf_dir):
+        if not fn.lower().endswith((".yml", ".yaml")):
+            continue
+        try:
+            with open(
+                os.path.join(wf_dir, fn), "r", encoding="utf-8", errors="replace"
+            ) as fh:
+                text = fh.read(200_000).lower()
+        except OSError:
+            continue
+        for kw, label in _CONTENT_KEYWORDS.items():
+            if kw in text:
+                found.append(label)
+    return found
+
+
 def _is_azure_host(url: str) -> bool:
     try:
         host = (urlparse(url).hostname or "").lower()
@@ -102,7 +127,9 @@ def detect_azure(root_dir: str, digest_text: str, deployment_url: str = "") -> A
     evidence = AzureEvidence()
     file_signals = _scan_files(root_dir)
     content_signals = _scan_content(digest_text)
-    signals = file_signals + content_signals
+    ci_signals = _scan_ci_workflows(root_dir)
+    # Evidence found in the repository itself (artifacts + CI workflows).
+    repo_signals = file_signals + content_signals + ci_signals
 
     # IaC / CI deploy config is "strong" evidence (vs. a mere hostname mention).
     iac_content = {
@@ -113,19 +140,27 @@ def detect_azure(root_dir: str, digest_text: str, deployment_url: str = "") -> A
         "Bicep/ARM App Service 리소스",
         "Bicep/ARM Container Apps 리소스",
     }
-    evidence.has_iac = bool(file_signals) or any(s in iac_content for s in content_signals)
+    evidence.has_iac = bool(file_signals) or any(
+        s in iac_content for s in content_signals + ci_signals
+    )
 
-    if deployment_url:
-        if _is_azure_host(deployment_url):
-            signals.append("Azure 배포 URL 제공")
-            if _check_live(deployment_url):
-                evidence.url_live = True
-                signals.append("배포 URL 응답 확인(live)")
+    signals = list(repo_signals)
+    if deployment_url and _is_azure_host(deployment_url):
+        if _check_live(deployment_url):
+            evidence.url_live = True
+            signals.append("배포 URL 응답 확인(live)")
+        else:
+            # A provided-but-unreachable URL is not, by itself, proof of deployment
+            # (otherwise any plausible *.azurewebsites.net string would score full
+            # points). Shown for transparency, but it does not grant points alone.
+            signals.append("Azure 배포 URL 제공(응답 없음 — 단독으로는 점수 미반영)")
 
     # de-duplicate while preserving order
     seen = set()
     evidence.signals = [s for s in signals if not (s in seen or seen.add(s))]
-    evidence.detected = len(evidence.signals) > 0
+    # Points require real evidence: repo artifacts/CI, or a URL that actually
+    # responds. A non-live URL on its own must not satisfy this required criterion.
+    evidence.detected = bool(repo_signals) or evidence.url_live
     return evidence
 
 

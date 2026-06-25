@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 @dataclass
 class ExecutionReport:
     available: bool = False  # was execution actually performed?
-    stack: str = ""  # node | python | go | ""
+    stack: str = ""  # node | python | go | dotnet | java-maven | java-gradle | ""
     build_ran: bool = False
     build_ok: bool = False
     test_ran: bool = False
@@ -42,7 +42,7 @@ _PY_SCRIPT = (
     "set -e; set -o pipefail; "
     "echo '::install'; "
     "if [ -f requirements.txt ]; then pip install -q -r requirements.txt 2>&1 | tail -n 40 || exit 31; fi; "
-    "if [ -f pyproject.toml ] && [ ! -f requirements.txt ]; then pip install -q . 2>&1 | tail -n 40 || exit 31; fi; "
+    "if [ ! -f requirements.txt ] && { [ -f pyproject.toml ] || [ -f setup.py ]; }; then pip install -q . 2>&1 | tail -n 40 || exit 31; fi; "
     "echo '::build'; python -c 'import compileall,sys; sys.exit(0 if compileall.compile_dir(\".\", quiet=1) else 1)' || exit 32; "
     "echo '::test'; (python -m pytest -q 2>&1 | tail -n 120) || exit 33; "
     "echo '::done'"
